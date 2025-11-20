@@ -1,4 +1,4 @@
-# RATE Evals
+# RATE-Evals
 
 A comprehensive evaluation pipeline for Vision-Language Models on medical imaging tasks, with built-in support for multi-GPU processing, real-time progress tracking, and disease finding classification.
 
