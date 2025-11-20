@@ -1,0 +1,23 @@
+repo_id: "YalaLab/Pillar0-rc1"
+revision: "epoch_24"
+device: null
+
+# Pooling operation for two-view inputs
+pool_op: "mean"  # Options: "mean", "max", "median", "middle"
+per_sample_windowing: true
+apply_normalization: false
+
+# CT windowing configuration
+ct_window_type: all  # Apply all 11 CT windows
+ct_normalize_mean: 0.289
+ct_normalize_std: 0.198
+
+# X-ray processing parameters (applies to chest X-ray modalities)
+# Using same normalization as CT processing
+xray_normalize_mean: 0.289
+xray_normalize_std: 0.198
+
+# MR windowing configuration
+mr_window_type: high_contrast
+mr_normalize_mean: 0.289
+mr_normalize_std: 0.198

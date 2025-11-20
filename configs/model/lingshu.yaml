@@ -1,0 +1,32 @@
+# Lingshu Model Configuration
+
+# Model identification
+model_name: lingshu-medical-mllm/Lingshu-7B
+device: null
+
+# Feature extraction settings
+extractor: vision_encoder
+pool_op: mean  # Options: "mean", "max", "median", "middle"
+token_pool_op: mean  # Spatial pooling over image tokens: "mean", "max"
+slice_batch_size: 32  # Number of slices to process at once (null = all slices, reduce if OOM)
+per_sample_windowing: true
+
+# Target size for the image processor
+target_slice_h: 896
+target_slice_w: 896
+
+# Model-specific parameters
+vision_tower_type: qwen2_5_vl
+hidden_size: 3584
+
+# CT processing parameters (only applies to chest_ct modality)
+ct_window_type: minmax
+ct_normalize_mean: [0.48145466, 0.4578275, 0.40821073]
+ct_normalize_std: [0.26862954, 0.26130258, 0.27577711]
+
+# X-ray processing parameters (applies to chest X-ray modalities)
+# Using actual Lingshu/Qwen2.5-VL normalization values from preprocessor_config.json
+xray_normalize_mean: [0.48145466, 0.4578275, 0.40821073]
+xray_normalize_std: [0.26862954, 0.26130258, 0.27577711]
+
+dtype: bfloat16

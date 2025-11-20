@@ -1,0 +1,24 @@
+# CT-CLIP model configuration
+model_checkpoint: "CT-CLIP_v2.pt"  # Path to CT-CLIP checkpoint file
+device: null
+
+per_sample_windowing: true
+
+# CT windowing configuration
+ct_window_type: none  # Options: all, none, or specific window name
+ct_normalize_mean: null  # Will use CT-CLIP default preprocessing if null
+ct_normalize_std: null   # Will use CT-CLIP default preprocessing if null
+
+# X-ray processing parameters (if needed)
+xray_normalize_mean: 0.5
+xray_normalize_std: 0.5
+
+# Model architecture parameters
+dim_text: 768
+dim_image: 294912
+dim_latent: 512
+visual_image_size: 256
+visual_patch_size: 32
+visual_enc_depth: 6
+visual_heads: 8
+visual_dim_head: 64

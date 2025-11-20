@@ -1,0 +1,90 @@
+# @package model
+# MedImageInsight Model Configuration
+
+# Model identification and loading
+device: null
+
+# Hugging Face repository settings
+repo_id: "lion-ai/MedImageInsights"
+revision: "main"
+hf_subfolder: "2024.09.27"
+vision_model_name: "medimageinsigt-v1.0.0.pt"
+
+# Model architecture parameters
+architecture:
+  embedding_dim: 1024  # Updated to match MedImageInsight's actual embedding dimension
+
+# Image preprocessing settings
+preprocessing:
+  # General image settings
+  target_slice_h: 480
+  target_slice_w: 480
+
+  # CT-specific preprocessing (applies to chest_ct modality)
+  ct:
+    window_type: minmax
+    normalize_mean: [0.485, 0.456, 0.406]  # ImageNet RGB means
+    normalize_std: [0.229, 0.224, 0.225]   # ImageNet RGB stds
+
+  # X-ray preprocessing (applies to chest X-ray modalities)
+  # Using ImageNet normalization for medical X-ray images
+  xray:
+    normalize_mean: [0.485, 0.456, 0.406]  # ImageNet RGB means
+    normalize_std: [0.229, 0.224, 0.225]   # ImageNet RGB stds
+
+# Feature extraction settings
+extraction:
+  pool_op: median  # Options: "mean", "max", "median", "middle"
+  slice_batch_size: 128  # Number of slices to process at once (null = all slices, reduce if OOM)
+
+per_sample_windowing: true
+
+# MedImageInsight-specific configuration
+model_config:
+  IMAGE_ENCODER:
+    NAME: 'davit_v1'
+    NUM_CLASSES: 0
+    IMAGE_SIZE: [480, 480]
+    LOAD_PRETRAINED: true
+    PRETRAINED: ''
+    PRETRAINED_LAYERS: ['*']
+    SPEC:
+      DROP_RATE: 0.1
+      DROP_PATH_RATE: 0.2
+      PATCH_SIZE: [7, 3, 3, 3]
+      PATCH_STRIDE: [4, 2, 2, 2]
+      PATCH_PADDING: [3, 1, 1, 1]
+      PATCH_PRENORM: [false, true, true, true]
+      DIM_EMBED: [256, 512, 1024, 2048]
+      NUM_HEADS: [8, 16, 32, 64]
+      NUM_GROUPS: [8, 16, 32, 64]
+      DEPTHS: [1, 1, 9, 1]
+      WINDOW_SIZE: 12
+      ENABLE_CHECKPOINT: true
+      STANDPARAM: true
+      CONV_AT_ATTN: true
+      CONV_AT_FFN: true
+      DYNAMIC_SCALE: true
+  LANG_ENCODER:
+    NAME: 'transformer'
+    LOAD_PRETRAINED: false
+    PRETRAINED: ''
+    PRETRAINED_LAYERS: ['*']
+    TOKENIZER: 'clip'
+    CONTEXT_LENGTH: 77
+    WIDTH: 1024
+    HEADS: 16
+    LAYERS: 16
+    AUTOGRESSIVE: false
+    PRETRAINED_TOKENIZER: 'openai/clip-vit-base-patch32'
+  UNICL_MODEL:
+    DIM_PROJECTION: 1024
+    GATHER_TENSORS: true
+    LOAD_PRETRAINED: true
+    PRETRAINED: ''
+    PRETRAINED_LAYERS: ['*']
+  AUG:
+    INTERPOLATION: 'bicubic'
+  TEST:
+    CENTER_CROP: false
+  VERBOSE: true 

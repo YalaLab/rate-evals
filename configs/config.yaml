@@ -1,0 +1,102 @@
+# Main Configuration for RATE Evaluation Pipeline
+# This is the central configuration file that imports and merges all other configs
+
+defaults:
+  - model: medgemma  # Default model - can be overridden via CLI
+  - dataset: dummy   # Default dataset - can be overridden via CLI
+  - _self_           # This config takes precedence over defaults
+
+# Dataset registry with config file mappings
+datasets:
+  dummy:
+    class: DummyDataset
+    config: configs/dataset/dummy.yaml
+  abd_ct_merlin:
+    class: MerlinAbdCT
+    config: configs/dataset/abd_ct_merlin.yaml
+  abd_ct_merlin_for_merlin_model:
+    class: MerlinAbdCTForMerlinModel
+    config: configs/dataset/abd_ct_merlin_for_merlin_model.yaml
+  abd_ct_merlin_for_ctclip_model:
+    class: MerlinAbdCTForCTCLIPModel
+    config: configs/dataset/abd_ct_merlin_for_ctclip_model.yaml
+
+# Global configuration overrides
+# These settings apply globally and can override defaults from base, model, and dataset configs
+
+# Hardware settings (can override base config)
+hardware:
+  device: cuda
+  batch_size_per_gpu: 16
+  num_workers_per_gpu: 8
+
+# Feature extraction settings
+extraction:
+  max_samples: null  # null means no limit
+  continue_on_error: false
+  check_nan: false
+
+# Evaluation configuration
+evaluation:
+  # Classification metrics to compute
+  metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1
+    - auc
+
+  # Data handling
+  treat_na_as_no: true
+
+  # Classifier configuration
+  use_pytorch: true        # Use GPU-accelerated PyTorch classifiers
+
+  # PyTorch classifier settings
+  pytorch:
+    batch_size: 8192       # Training batch size
+    learning_rate: 1e-3    # Adam learning rate
+    num_epochs: 1000       # Training epochs
+    weight_decay: 0        # L2 regularization via Adam weight decay
+    num_workers: 8         # Number of data loading workers
+
+  # Sklearn fallback settings (when use_pytorch=false)
+  sklearn:
+    solver: saga           # Options: "saga", "liblinear", "lbfgs", "sag"
+    max_iter: 1000         # Maximum iterations for solver
+    C: 0.01                # Regularization strength (smaller = more regularization)
+    class_weight: balanced # Handle class imbalance
+
+  # Weights & Biases integration
+  use_wandb: true
+  wandb_entity: yala-lab
+  wandb_project: rate-eval
+  exp_name: null           # If null, will be generated dynamically
+
+  # Additional evaluation settings
+  check_nan: false
+
+# Logging configuration
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Model defaults (can be overridden by specific model configs)
+model:
+  dtype: bfloat16
+  device: ${hardware.device}
+
+# Dataset defaults (can be overridden by specific dataset configs)
+dataset:
+  image_mode: L
+  use_opencv: true
+
+# Hydra settings for better configuration management
+hydra:
+  job:
+    chdir: false  # Don't change working directory
+    name: rate_eval
+  run:
+    dir: logs/runs
+  sweep:
+    dir: logs/multirun

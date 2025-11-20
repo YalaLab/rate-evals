@@ -1,0 +1,19 @@
+repo_id: "stanfordmimi/Merlin"
+revision: "main"
+device: null
+
+# Model checkpoint configuration
+checkpoint_name: "i3_resnet_clinical_longformer_best_clip_04-02-2024_23-21-36_epoch_99.pt"
+
+# Image embedding mode
+image_embedding_mode: true  # Set to true for image-only mode, false for image+text mode
+
+# CT processing configuration
+ct_window_type: "default"  # Default processing for Merlin
+ct_normalize_mean: 0.5  # Merlin uses [0,1] normalization after windowing
+ct_normalize_std: 0.25
+
+# Preprocessing transforms
+spatial_size: [224, 224, 160]  # Target spatial size for CT volumes
+spacing: [1.5, 1.5, 3.0]  # Target spacing for CT volumes
+intensity_range: [-1000, 1000]  # HU range for intensity scaling

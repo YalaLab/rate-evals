@@ -1,0 +1,42 @@
+# @package model
+# MedGemma Model Configuration
+
+# Model identification and loading
+repo_id: google/medgemma-4b-pt
+dtype: bfloat16
+device: null
+
+# Model architecture parameters
+architecture:
+  extractor: visiontower
+  vision_tower_type: clip
+  hidden_size: 2048
+
+# Image preprocessing settings
+preprocessing:
+  # General image settings
+  target_slice_h: 896
+  target_slice_w: 896
+
+  # CT-specific preprocessing (applies to chest_ct modality)
+  ct:
+    window_type: minmax
+    normalize_mean: 0.5
+    normalize_std: 0.5
+
+  # X-ray preprocessing (applies to chest X-ray modalities)
+  # Based on official MedGemma preprocessor config
+  xray:
+    normalize_mean: 0.5
+    normalize_std: 0.5
+
+# Feature extraction settings
+extraction:
+  pool_op: mean  # Options: "mean", "max", "median", "middle"
+  slice_batch_size: 128  # Number of slices to process at once (null = all slices, reduce if OOM)
+
+per_sample_windowing: true
+
+# Hardware settings (can override base config)
+hardware:
+  device: ${hardware.device}  # Inherit from global hardware config

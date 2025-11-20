@@ -1,0 +1,17 @@
+# Merlin Abdominal CT dataset config tailored for CT-CLIP preprocessing
+
+data:
+  root_dir: /data/raw
+  nii_root_dir: /data/raw
+  additional_roots: []
+  
+  # JSON file paths for different splits
+  train_json: data/merlin/merlin_abd_ct/train.json
+  valid_json: data/merlin/merlin_abd_ct/valid.json
+  test_json: data/merlin/merlin_abd_ct/test.json
+  metadata_csv: null
+
+img_paths_key: nii_path
+csv_caption_key: report_metadata
+separator: ","
+modality: "abdomen_ct"

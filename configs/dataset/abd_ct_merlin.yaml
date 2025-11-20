@@ -1,0 +1,32 @@
+# Merlin Abdominal CT Dataset Configuration
+
+# Data paths
+data:
+  root_dir: data/merlin/image_cache_torch
+  
+  # JSON file paths for different splits
+  train_json: data/merlin/merlin_abd_ct/train.json
+  valid_json: data/merlin/merlin_abd_ct/valid.json
+  test_json: data/merlin/merlin_abd_ct/test.json
+  
+  # Cache manifest for preprocessed volumes
+  cache_manifest: data/merlin/merlin_cache_1.5mm/manifest.csv
+
+
+# Dataset processing parameters
+target_d: 384
+target_h: 384
+target_w: 384
+pad_value: -1.0
+transform_option: pad,nearest
+use_opencv: true
+image_mode: L
+transforms_3d: DHW
+
+# Dataset metadata
+img_paths_key: nii_path
+csv_caption_key: report_metadata
+separator: "," 
+
+# Modality for the model
+modality: "abdomen_ct"  # Specify the modality for the multimodal model

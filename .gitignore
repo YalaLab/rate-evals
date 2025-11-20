@@ -1,0 +1,30 @@
+**/__pycache__/**
+build/**
+dist/**
+*.egg.info/**
+*.csv
+*.pth
+*.log
+*.png
+venv/
+
+# Cache directories and results
+cache/
+results/
+
+# Additional egg files
+*.egg-info/
+
+*_ignored*
+wandb/
+.vscode/
+.venv
+cache
+*.pt
+CLAUDE.md
+test*.py
+inference_*
+*.npz
+data_tmp
+
+*_ignored*

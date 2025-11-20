@@ -1,0 +1,37 @@
+# @package dataset
+# Dummy Dataset Configuration for Testing
+# Based on MIMIC-CXR format but using a single repeated image
+
+# Dataset identification
+name: dummy
+modality: chest_xray_two_view
+synthetic: true
+
+# Data paths (dummy - no real files needed)
+data:
+  root_dir: /tmp/dummy_data
+
+  # Split files not needed for dummy dataset
+  splits:
+    train_csv: null
+    valid_csv: null
+    test_csv: null
+
+# Dataset processing parameters
+processing:
+  # Image settings (similar to MIMIC-CXR)
+  target_size: [1024, 1024]  # Pillar0's expected input size
+  image_mode: L
+  max_images_per_sample: 2
+  view_preferences:
+    - PA
+    - AP
+    - LATERAL
+
+# Dummy-specific settings
+generation:
+  num_samples: 1000  # Number of samples to repeat (default 1000)
+
+# Labels (dummy labels for testing)
+labels:
+  labels_json: null  # No real labels for dummy dataset

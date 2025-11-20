@@ -1,0 +1,51 @@
+# Core ML/DL frameworks
+torch>=2.0.0
+torchvision>=0.15.0
+numpy>=1.21.0,<1.25.0
+pandas>=1.3.0
+
+# Computer Vision
+opencv-python>=4.5.0
+Pillow>=8.3.0
+
+# Transformers and NLP
+transformers>=4.50.0
+tokenizers>=0.13.0
+huggingface_hub>=0.21.0
+accelerate>=1.7.0
+
+# Tensor manipulation
+einops>=0.6.0
+
+# Scientific computing and ML utilities
+scikit-learn>=1.0.0
+joblib>=1.1.0
+scipy>=1.7.0
+
+# Progress bars and utilities
+tqdm>=4.62.0
+
+# Configuration and argument parsing
+PyYAML>=6.0
+omegaconf>=2.3.0
+hydra-core>=1.3.0
+argparse
+jinja2>=3.1.0
+
+# Additional dependencies for transformers
+tensorflow>=2.12.0
+protobuf>=3.20.0
+
+# Logging and utilities
+colorlog>=6.6.0
+wandb>=0.15.0
+
+# Optional but useful for medical imaging
+# SimpleITK>=2.2.0  # Uncomment if needed for DICOM/medical formats
+nibabel>=3.2.0    # Uncomment if needed for NIfTI format support
+
+# Development and testing (optional)
+pytest>=6.2.0
+black>=22.0.0
+flake8>=4.0.0
+mypy>=0.910 
