@@ -48,8 +48,7 @@ uv run rate-extract \
     --all-splits \
     --batch-size 4 \
     --output-dir cache/pillar0_abd_ct_merlin \
-    --model-repo-id YalaLab/Pillar0-Merlin \
-    --model-revision epoch_24 \
+    --model-repo-id YalaLab/Pillar0-AbdomenCT \
     --ct-window-type all \
     --modality abdomen_ct
 
@@ -74,8 +73,7 @@ uv run rate-extract \
     --split train \
     --batch-size 4 \
     --output-dir cache/pillar0_abd_ct_merlin \
-    --model-repo-id YalaLab/Pillar0-Merlin \
-    --model-revision epoch_24 \
+    --model-repo-id YalaLab/Pillar0-AbdomenCT \
     --ct-window-type all \
     --modality abdomen_ct \
     data.train_json=data/merlin_example/train.json \
