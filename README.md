@@ -61,6 +61,35 @@ uv run rate-evaluate \
     --output-dir results/pillar0_abd_ct_merlin
 ```
 
+## Running with a Custom Example Dataset
+
+You can test the pipeline with a small example dataset using Hydra configuration overrides. This is useful as an example for setting up your own dataset.
+
+### Example: Using Custom Data Paths
+
+```bash
+uv run rate-extract \
+    --model pillar0 \
+    --dataset abd_ct_merlin \
+    --split train \
+    --batch-size 4 \
+    --output-dir cache/pillar0_abd_ct_merlin \
+    --model-repo-id YalaLab/Pillar0-Merlin \
+    --model-revision epoch_24 \
+    --ct-window-type all \
+    --modality abdomen_ct \
+    data.train_json=data/merlin_example/train.json \
+    data.cache_manifest=data/merlin_example/manifest.csv
+```
+
+### Key Points
+
+1. **Hydra Configuration Overrides**: The `data.train_json` and `data.cache_manifest` arguments use Hydra-style overrides (without `--` prefix, using `key=value` format)
+2. **Required File Structure**:
+   - `train.json`: JSON file with sample metadata (e.g., `{"sample_name": "EXAMPLE_ACCESSION", "nii_path": null, "report_metadata": "FINDINGS: ..."}`)
+   - `manifest.csv`: CSV mapping samples to cached volumes (columns: `sample_name`, `image_cache_path`)
+   - Volume directories: Each volume should be in a directory with `volume.mp4` and `metadata.json`
+
 ## Troubleshooting
 ### Common Issues
 

@@ -1,0 +1,61 @@
+{
+  "series_info": {
+    "accession": "EXAMPLE_ACCESSION",
+    "series_number": 1,
+    "series_uid": "EXAMPLE_ACCESSION.nii.gz",
+    "series_description": "",
+    "modality": "CT",
+    "slice_count": 1
+  },
+  "processing_metadata": {
+    "modality": "CT",
+    "anatomy": "abdomen",
+    "original_spacing": [
+      0.6875,
+      0.6875,
+      1.0
+    ],
+    "target_spacing": [
+      1.5,
+      1.5,
+      1.5
+    ],
+    "original_shape": [
+      404,
+      512,
+      512
+    ],
+    "final_shape": [
+      269,
+      384,
+      384
+    ],
+    "crop_pad_target": [
+      384,
+      384
+    ],
+    "slice_count": 269,
+    "value_range": "raw_hounsfield_units",
+    "series_uid": "EXAMPLE_ACCESSION.nii.gz",
+    "slice_info": []
+  },
+  "export_info": {
+    "format": "video",
+    "encoder": "libx265",
+    "codec": "LIBX265",
+    "bit_depth": 10,
+    "crf": 6,
+    "gop_size": 128,
+    "archived": false,
+    "hu_mapping": {
+      "min": -1024,
+      "max": 3071,
+      "output_range": [
+        0,
+        1023
+      ]
+    },
+    "exporter_version": "1.1",
+    "hardware_accelerated": false
+  }
+}
