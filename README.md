@@ -16,8 +16,6 @@ source .venv/bin/activate
 
 # Install rad-vision-engine
 git clone https://github.com/yalalab/rad-vision-engine ../rad-vision-engine
-cd ../rad-vision-engine
-cd ../rate_evals
 uv pip install -e ../rad-vision-engine
 ```
 
