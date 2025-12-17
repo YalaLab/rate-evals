@@ -14,6 +14,12 @@ datasets:
   rve_chest_ct:
     class: RVEDataset
     config: configs/dataset/rve_chest_ct.yaml
+  rve_brain_ct:
+    class: RVEDataset
+    config: configs/dataset/rve_brain_ct.yaml
+  rve_abd_ct:
+    class: RVEDataset
+    config: configs/dataset/rve_abd_ct.yaml
   abd_ct_merlin:
     class: MerlinAbdCT
     config: configs/dataset/abd_ct_merlin.yaml

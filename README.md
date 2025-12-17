@@ -84,10 +84,10 @@ To extract vision embeddings using the Chest CT model, please refer to the examp
 ```bash
 uv run rate-extract \
     --model pillar0 \
-    --dataset rve_chest_ct \
+    --dataset {rve_abd_ct, rve_brain_ct, rve_chest_ct} \
     --split train \
     --batch-size 4 \
-    --model-repo-id YalaLab/Pillar0-ChestCT \
+    --model-repo-id {YalaLab/Pillar0-AbdomenCT, YalaLab/Pillar0-BrainCT, YalaLab/Pillar0-ChestCT} \
     --ct-window-type all \
     --output-dir /path/to/cache \
     data.train_json=/path/to/json \
