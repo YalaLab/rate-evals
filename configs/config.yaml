@@ -11,6 +11,9 @@ datasets:
   dummy:
     class: DummyDataset
     config: configs/dataset/dummy.yaml
+  rve_chest_ct:
+    class: RVEDataset
+    config: configs/dataset/rve_chest_ct.yaml
   abd_ct_merlin:
     class: MerlinAbdCT
     config: configs/dataset/abd_ct_merlin.yaml

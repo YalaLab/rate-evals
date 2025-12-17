@@ -1,5 +1,5 @@
 repo_id: "YalaLab/Pillar0-rc1"
-revision: "epoch_24"
+revision: "main"
 device: null
 
 # Pooling operation for two-view inputs

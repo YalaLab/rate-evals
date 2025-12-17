@@ -66,18 +66,32 @@ You can test the pipeline with a small example dataset using Hydra configuration
 
 ### Example: Using Custom Data Paths
 
+We demonstrate how to extract embeddings using the Abdomen CT model using a public example from the Merlin dataset:
 ```bash
 uv run rate-extract \
     --model pillar0 \
     --dataset abd_ct_merlin \
     --split train \
     --batch-size 4 \
-    --output-dir cache/pillar0_abd_ct_merlin \
     --model-repo-id YalaLab/Pillar0-AbdomenCT \
     --ct-window-type all \
-    --modality abdomen_ct \
+    --output-dir cache/pillar0_abd_ct_merlin \
     data.train_json=data/merlin_example/train.json \
     data.cache_manifest=data/merlin_example/manifest.csv
+```
+
+To extract vision embeddings using the Chest CT model, please refer to the example metadata in [data/merlin_example](data/merlin_example/). 
+```bash
+uv run rate-extract \
+    --model pillar0 \
+    --dataset rve_chest_ct \
+    --split train \
+    --batch-size 4 \
+    --model-repo-id YalaLab/Pillar0-ChestCT \
+    --ct-window-type all \
+    --output-dir /path/to/cache \
+    data.train_json=/path/to/json \
+    data.cache_manifest=/path/to/csv
 ```
 
 ### Key Points
