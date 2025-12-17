@@ -28,6 +28,6 @@ csv_caption_key: report_metadata
 separator: "," 
 
 # Modality for the model
-modality: "brain_ct"  # Specify the modality for the multimodal model
+modality: "abdomen_ct"  # Specify the modality for the multimodal model
 
 
