@@ -1,0 +1,33 @@
+# Chest CT Dataset Configuration
+
+# Data paths
+data:
+  root_dir: null
+  
+  # JSON file paths for different splits
+  train_json: null
+  valid_json: null
+  test_json: null
+  
+  # Cache manifest for preprocessed volumes
+  cache_manifest: null
+
+# Dataset processing parameters
+target_d: 256
+target_h: 256
+target_w: 256
+pad_value: -1.0
+transform_option: pad,nearest
+use_opencv: true
+image_mode: L
+transforms_3d: DHW
+
+# Dataset metadata
+img_paths_key: nii_path
+csv_caption_key: report_metadata
+separator: "," 
+
+# Modality for the model
+modality: "chest_ct"  # Specify the modality for the multimodal model
+
+

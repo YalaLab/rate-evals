@@ -209,9 +209,9 @@ def apply_3d_transforms(
     return volume
 
 
-class MerlinAbdCT:
+class RVEDataset:
     """
-    Merlin Abdominal CT dataset for medical image analysis.
+    RVE dataset for medical image analysis.
 
     This dataset loads 3D CT volumes from cached .pt files or NII.gz files.
     Labels are loaded separately during evaluation from JSON files.
@@ -366,3 +366,6 @@ class MerlinAbdCT:
     def get_accessions_batch(self, indices: List[int]) -> List[str]:
         """Get accessions for a batch of indices without loading data."""
         return self.df.iloc[indices]["sample_name"].tolist()
+
+
+MerlinAbdCT = RVEDataset
