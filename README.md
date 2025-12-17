@@ -80,14 +80,14 @@ uv run rate-extract \
     data.cache_manifest=data/merlin_example/manifest.csv
 ```
 
-To extract vision embeddings using the CT models, please refer to the example metadata in [data/merlin_example](data/merlin_example/). 
+To extract vision embeddings using the CT models, please refer to the example metadata in [data/rve_example](data/rve_example/). 
 ```bash
 uv run rate-extract \
     --model pillar0 \
-    --dataset {rve_abd_ct, rve_brain_ct, rve_chest_ct} \
+    --dataset rve_chest_ct # rve_abd_ct, rve_brain_ct, rve_chest_ct \
     --split train \
     --batch-size 4 \
-    --model-repo-id {YalaLab/Pillar0-AbdomenCT, YalaLab/Pillar0-BrainCT, YalaLab/Pillar0-ChestCT} \
+    --model-repo-id YalaLab/Pillar0-ChestCT # YalaLab/Pillar0-AbdomenCT, YalaLab/Pillar0-BrainCT, YalaLab/Pillar0-ChestCT \
     --ct-window-type all \
     --output-dir /path/to/cache \
     data.train_json=/path/to/json \
