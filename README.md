@@ -80,7 +80,7 @@ uv run rate-extract \
     data.cache_manifest=data/merlin_example/manifest.csv
 ```
 
-To extract vision embeddings using the Chest CT model, please refer to the example metadata in [data/merlin_example](data/merlin_example/). 
+To extract vision embeddings using the CT models, please refer to the example metadata in [data/merlin_example](data/merlin_example/). 
 ```bash
 uv run rate-extract \
     --model pillar0 \
