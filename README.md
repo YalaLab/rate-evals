@@ -76,8 +76,8 @@ uv run rate-extract \
     --model-repo-id YalaLab/Pillar0-AbdomenCT \
     --ct-window-type all \
     --output-dir cache/pillar0_abd_ct_merlin \
-    data.train_json=data/merlin_example/train.json \
-    data.cache_manifest=data/merlin_example/manifest.csv
+    data.train_json=data/rve_example/train.json \
+    data.cache_manifest=data/rve_example/manifest.csv
 ```
 
 To extract vision embeddings using the CT models, please refer to the example metadata in [data/rve_example](data/rve_example/). 
