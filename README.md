@@ -14,9 +14,9 @@ uv sync
 uv add flash-attn --no-build-isolation
 source .venv/bin/activate
 
-# Install rad-vision-engine
-git clone https://github.com/yalalab/rad-vision-engine ../rad-vision-engine
-uv pip install -e ../rad-vision-engine
+# Install rave
+git clone https://github.com/yalalab/rave ../rave
+uv pip install -e ../rave
 ```
 
 ### Setting up Console Scripts

@@ -108,7 +108,7 @@ python_functions = "test_*"
 addopts = "-v --tb=short"
 
 [tool.uv.sources]
-rad-vision-engine = { path = "../rad-vision-engine", editable = true }
+rad-vision-engine = { path = "../rave", editable = true }
 
 [tool.ruff]
 line-length = 100
