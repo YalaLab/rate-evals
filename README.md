@@ -38,6 +38,10 @@ After installation, the console scripts (`rate-extract`, `rate-evaluate`) are in
    python -m rate_eval.cli.evaluate [OPTIONS]
    ```
 
+## Tutorial
+
+For a step-by-step walkthrough of feature extraction and evaluation (including how to add a custom dataset), see [TUTORIAL.md](TUTORIAL.md).
+
 ## Evaluate Pillar0 on Merlin Abdominal CT Dataset
 
 ```bash
