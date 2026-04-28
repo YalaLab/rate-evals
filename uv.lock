@@ -7768,7 +7768,7 @@ wheels = [
 [[package]]
 name = "rad-vision-engine"
 version = "1.0.0"
-source = { editable = "../rad-vision-engine" }
+source = { git = "https://github.com/YalaLab/rave?branch=main#20adeb873021c864e9410fae8898b0c8da309769" }
 dependencies = [
     { name = "lz4", version = "4.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "lz4", version = "4.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
@@ -7836,7 +7836,6 @@ dependencies = [
     { name = "argparse" },
     { name = "colorlog" },
     { name = "einops" },
-    { name = "flash-attn", version = "2.7.0.post2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "flash-attn", version = "2.8.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
     { name = "hf-transfer" },
     { name = "huggingface-hub" },
@@ -7940,7 +7939,7 @@ requires-dist = [
     { name = "protobuf", specifier = ">=3.20.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=6.2.0" },
     { name = "pyyaml", specifier = ">=6.0" },
-    { name = "rad-vision-engine", editable = "../rad-vision-engine" },
+    { name = "rad-vision-engine", git = "https://github.com/YalaLab/rave?branch=main" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.9" },
     { name = "scikit-learn", specifier = ">=1.0.0" },
     { name = "scipy", specifier = ">=1.7.0" },

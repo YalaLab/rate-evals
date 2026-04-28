@@ -13,10 +13,6 @@ export PATH="$HOME/.local/bin:$PATH"
 uv sync
 uv add flash-attn --no-build-isolation
 source .venv/bin/activate
-
-# Install rad-vision-engine
-git clone https://github.com/yalalab/rad-vision-engine ../rad-vision-engine
-uv pip install -e ../rad-vision-engine
 ```
 
 ### Setting up Console Scripts

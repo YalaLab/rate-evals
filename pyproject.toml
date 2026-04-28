@@ -108,7 +108,10 @@ python_functions = "test_*"
 addopts = "-v --tb=short"
 
 [tool.uv.sources]
-rad-vision-engine = { path = "../rad-vision-engine", editable = true }
+rad-vision-engine = { git = "https://github.com/YalaLab/rave", branch = "main" }
+
+[tool.uv.extra-build-dependencies]
+flash-attn = ["torch"]
 
 [tool.ruff]
 line-length = 100
