@@ -72,6 +72,15 @@ def evaluate_embeddings_cli():
         default=False,
         help="Enable detailed NaN checking and logging during evaluation (may impact performance)",
     )
+    parser.add_argument(
+        "--eval-splits",
+        nargs="+",
+        default=["test"],
+        help="Splits to evaluate after fitting the linear probe on 'train' "
+             "(default: test). Pass multiple to evaluate the same probe on "
+             "several splits, e.g. --eval-splits valid test. Multi-split runs "
+             "write per-split subdirs under --output-dir.",
+    )
 
     # Allow trailing Hydra-style overrides (key=value) exactly as shown in the
     # CLI examples by stripping them before running argparse.
@@ -236,6 +245,7 @@ def evaluate_embeddings_cli():
             labels_json_path=labels_json_path,
             pool_op=args.pool_op,
             output_dir=args.output_dir,
+            eval_splits=tuple(args.eval_splits),
         )
 
         # Print final summary

@@ -4,6 +4,7 @@ This module combines all evaluation functionality to eliminate code duplication.
 """
 
 import json
+import os
 import time
 import numpy as np
 import pandas as pd
@@ -1178,6 +1179,26 @@ class EmbeddingEvaluator:
             "probabilities": all_probabilities,
         }
 
+    @staticmethod
+    def _extract_metrics(summary_stats: Dict[str, Any]) -> Dict[str, Any]:
+        """Project the verbose summary_stats onto the metrics typically
+        reported in medical-imaging benchmarks: averages computed over the
+        subset of findings with at least one positive sample in the eval set
+        (the 'drop_zeros' subset, where AUC is well-defined).
+
+        Returns flat-keyed dict suitable for one-line tabular reads.
+        """
+        return {
+            "auc":              summary_stats.get("drop_zeros_common_auc"),
+            "f1":               summary_stats.get("drop_zeros_common_f1"),
+            "accuracy":         summary_stats.get("drop_zeros_common_accuracy"),
+            "precision":        summary_stats.get("drop_zeros_common_precision"),
+            "recall":           summary_stats.get("drop_zeros_common_recall"),
+            "specificity":      summary_stats.get("drop_zeros_common_specificity"),
+            "n_findings":       summary_stats.get("drop_zeros_common_count"),
+            "n_findings_total": summary_stats.get("total_findings"),
+        }
+
     def save_results(self, results: Dict[str, Any], output_dir: str) -> None:
         """
         Save evaluation results to CSV and JSON files.
@@ -1208,6 +1229,13 @@ class EmbeddingEvaluator:
             json.dump(results["summary_stats"], f, indent=2)
         logger.info(f"Saved summary stats to {summary_json_path}")
 
+        # Save the reported-metrics projection alongside the verbose summary.
+        metrics = self._extract_metrics(results.get("summary_stats", {}))
+        metrics_json_path = output_path / "metrics.json"
+        with open(metrics_json_path, "w") as f:
+            json.dump(metrics, f, indent=2)
+        logger.info(f"Saved metrics to {metrics_json_path}")
+
         # Save training stats if available
         if "training_stats" in results:
             training_json_path = output_path / "training_stats.json"
@@ -1222,6 +1250,7 @@ class EmbeddingEvaluator:
         labels_json_path: str,
         pool_op: str = "mean",
         output_dir: str = "results",
+        eval_splits: Tuple[str, ...] = ("test",),
     ) -> Dict[str, Any]:
         """
         Run complete evaluation pipeline from checkpoint directory.
@@ -1232,96 +1261,108 @@ class EmbeddingEvaluator:
             labels_json_path: Path to JSON file with labels (qa_results format)
             pool_op: Pooling operation used
             output_dir: Directory to save results
+            eval_splits: Splits to evaluate after training the probe on 'train'.
+                Default: ('test',) — single-split, back-compat. Pass multiple
+                (e.g. ('valid', 'test')) to evaluate the same probe on each;
+                results land under <output_dir>/<split>/.
 
         Returns:
-            Dictionary with complete evaluation results
+            Dictionary with the *last* evaluated split's results (back-compat
+            with single-split callers).
         """
         start_time = time.time()
         logger.info("Starting full embedding evaluation pipeline")
 
         try:
+            eval_splits = tuple(eval_splits) or ("test",)
+            single_split = len(eval_splits) == 1
+
             # Load training data
             step_start = time.time()
-            logger.info("Step 1/5: Loading training embeddings...")
+            logger.info("Loading training embeddings...")
             train_embeddings, train_labels, train_accessions = self.load_embeddings_from_checkpoint(
                 checkpoint_dir, dataset_name, "train", labels_json_path
             )
             logger.info(f"Training data loaded in {time.time() - step_start:.1f}s")
 
-            # Load test data
+            # Train classifiers (probe is fit once on train; reused across eval splits)
             step_start = time.time()
-            logger.info("Step 2/5: Loading test embeddings...")
-            test_embeddings, test_labels, test_accessions = self.load_embeddings_from_checkpoint(
-                checkpoint_dir, dataset_name, "test", labels_json_path
-            )
-            logger.info(f"Test data loaded in {time.time() - step_start:.1f}s")
-
-            # Train classifiers
-            step_start = time.time()
-            logger.info("Step 3/5: Training classifiers...")
+            logger.info("Training classifiers on train split...")
             self.models = self.train_linear_classifiers(train_embeddings, train_labels)
             logger.info(f"Classifiers trained in {time.time() - step_start:.1f}s")
 
-            # Evaluate classifiers
-            step_start = time.time()
-            logger.info("Step 4/5: Evaluating classifiers...")
-            results = self.evaluate_classifiers(
-                test_embeddings, test_labels, test_accessions, "auto", pool_op
-            )
-            logger.info(f"Evaluation completed in {time.time() - step_start:.1f}s")
+            # Evaluate on each requested split. Probe is shared across splits.
+            results = None
+            for split in eval_splits:
+                step_start = time.time()
+                logger.info("Evaluating split '%s': loading embeddings...", split)
+                eval_embeddings, eval_labels, eval_accessions = self.load_embeddings_from_checkpoint(
+                    checkpoint_dir, dataset_name, split, labels_json_path
+                )
+                results = self.evaluate_classifiers(
+                    eval_embeddings, eval_labels, eval_accessions, "auto", pool_op
+                )
+                split_out = output_dir if single_split else os.path.join(output_dir, split)
+                logger.info("Evaluating split '%s': saving results to %s", split, split_out)
+                self.save_results(results, split_out)
+                m = self._extract_metrics(results.get("summary_stats") or {})
+                auc = m.get("auc") if m.get("auc") is not None else float("nan")
+                f1 = m.get("f1") if m.get("f1") is not None else float("nan")
+                logger.info(
+                    "%s: AUC=%.4f  F1=%.4f  n=%s/%s",
+                    split, auc, f1, m.get("n_findings"), m.get("n_findings_total"),
+                )
 
-            # Log evaluation metrics to WandB
-            if self.use_wandb and wandb.run is not None and "summary_stats" in results:
-                summary = results["summary_stats"]
-
-                # Log summary metrics
-                wandb_metrics = {
-                    "evaluation/avg_accuracy": summary.get("avg_accuracy", 0),
-                    "evaluation/avg_precision": summary.get("avg_precision", 0),
-                    "evaluation/avg_recall": summary.get("avg_recall", 0),
-                    "evaluation/avg_f1": summary.get("avg_f1", 0),
-                    "evaluation/avg_auc": summary.get("avg_auc", 0),
-                    "evaluation/avg_specificity": summary.get("avg_specificity", 0),
-                    "evaluation/total_findings": summary.get("total_findings", 0),
-                    "evaluation/evaluated_findings": summary.get("evaluated_findings", 0),
-                    "data/num_train_samples": len(train_accessions),
-                    "data/num_test_samples": len(test_accessions),
-                    "data/embedding_dim": (
-                        train_embeddings.shape[1] if len(train_embeddings.shape) > 1 else 0
-                    ),
-                }
-
-                # Log split metrics for each threshold configuration
-                # Known threshold names from our fixed configuration
-                known_thresholds = ["full", "drop_zeros"]
-
-                for key, value in summary.items():
-                    # Check for threshold-specific metrics (format: thresholdname_group_metricname)
-                    for threshold_name in known_thresholds:
-                        prefix = f"{threshold_name}_"
-                        if key.startswith(prefix):
-                            # Extract group (common/rare) and metric name
-                            remaining = key[len(prefix) :]
+                # Per-split WandB logging. Single-split callers (default
+                # eval_splits=("test",)) keep the old flat-key dashboard:
+                # `evaluation/avg_auc` etc. Multi-split runs namespace each
+                # split under `evaluation/<split>/...` and tag the eval-set
+                # size under `data/<split>/num_samples` so dashboards stay
+                # unambiguous.
+                if self.use_wandb and wandb.run is not None and "summary_stats" in results:
+                    summary = results["summary_stats"]
+                    if single_split:
+                        ev_prefix = "evaluation"
+                        n_samples_key = "data/num_test_samples"
+                    else:
+                        ev_prefix = f"evaluation/{split}"
+                        n_samples_key = f"data/{split}/num_samples"
+                    wandb_metrics = {
+                        f"{ev_prefix}/avg_accuracy":       summary.get("avg_accuracy", 0),
+                        f"{ev_prefix}/avg_precision":      summary.get("avg_precision", 0),
+                        f"{ev_prefix}/avg_recall":         summary.get("avg_recall", 0),
+                        f"{ev_prefix}/avg_f1":             summary.get("avg_f1", 0),
+                        f"{ev_prefix}/avg_auc":            summary.get("avg_auc", 0),
+                        f"{ev_prefix}/avg_specificity":    summary.get("avg_specificity", 0),
+                        f"{ev_prefix}/total_findings":     summary.get("total_findings", 0),
+                        f"{ev_prefix}/evaluated_findings": summary.get("evaluated_findings", 0),
+                        n_samples_key:                     len(eval_accessions),
+                        "data/num_train_samples":          len(train_accessions),
+                        "data/embedding_dim": (
+                            train_embeddings.shape[1] if len(train_embeddings.shape) > 1 else 0
+                        ),
+                    }
+                    # Threshold-specific keys: thresholdname_group_metric -> evaluation/<split>/threshold/group/metric
+                    known_thresholds = ["full", "drop_zeros"]
+                    for key, value in summary.items():
+                        for threshold_name in known_thresholds:
+                            prefix = f"{threshold_name}_"
+                            if not key.startswith(prefix):
+                                continue
+                            remaining = key[len(prefix):]
                             if remaining.startswith("common_"):
-                                group = "common"
-                                metric_name = remaining[7:]  # len("common_")
+                                group, metric_name = "common", remaining[len("common_"):]
                             elif remaining.startswith("rare_"):
-                                group = "rare"
-                                metric_name = remaining[5:]  # len("rare_")
+                                group, metric_name = "rare", remaining[len("rare_"):]
                             else:
                                 continue
+                            wandb_metrics[f"{ev_prefix}/{threshold_name}/{group}/{metric_name}"] = value
+                    wandb.log(wandb_metrics)
+                    logger.info("Logged '%s' evaluation metrics to WandB", split)
 
-                            wandb_key = f"evaluation/{threshold_name}/{group}/{metric_name}"
-                            wandb_metrics[wandb_key] = value
-
-                wandb.log(wandb_metrics)
-                logger.info("Logged evaluation metrics to WandB")
-
-            # Save results
-            step_start = time.time()
-            logger.info("Step 5/5: Saving results...")
-            self.save_results(results, output_dir)
-            logger.info(f"Results saved in {time.time() - step_start:.1f}s")
+                logger.info(
+                    "Split '%s' evaluated + saved in %.1fs", split, time.time() - step_start
+                )
 
             total_time = time.time() - start_time
             logger.info(
