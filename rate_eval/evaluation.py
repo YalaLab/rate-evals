@@ -4,6 +4,7 @@ This module combines all evaluation functionality to eliminate code duplication.
 """
 
 import json
+import os
 import time
 import numpy as np
 import pandas as pd
@@ -1222,6 +1223,7 @@ class EmbeddingEvaluator:
         labels_json_path: str,
         pool_op: str = "mean",
         output_dir: str = "results",
+        eval_splits: Tuple[str, ...] = ("test",),
     ) -> Dict[str, Any]:
         """
         Run complete evaluation pipeline from checkpoint directory.
@@ -1232,14 +1234,21 @@ class EmbeddingEvaluator:
             labels_json_path: Path to JSON file with labels (qa_results format)
             pool_op: Pooling operation used
             output_dir: Directory to save results
+            eval_splits: Splits to evaluate after training the probe on 'train'.
+                Default: ('test',) — single-split, back-compat. Pass multiple
+                (e.g. ('valid', 'test')) to evaluate the same probe on each;
+                results land under <output_dir>/<split>/.
 
         Returns:
-            Dictionary with complete evaluation results
+            Dictionary with the *last* evaluated split's results (back-compat
+            with single-split callers).
         """
         start_time = time.time()
         logger.info("Starting full embedding evaluation pipeline")
 
         try:
+            eval_splits = tuple(eval_splits) or ("test",)
+
             # Load training data
             step_start = time.time()
             logger.info("Step 1/5: Loading training embeddings...")
@@ -1248,27 +1257,32 @@ class EmbeddingEvaluator:
             )
             logger.info(f"Training data loaded in {time.time() - step_start:.1f}s")
 
-            # Load test data
-            step_start = time.time()
-            logger.info("Step 2/5: Loading test embeddings...")
-            test_embeddings, test_labels, test_accessions = self.load_embeddings_from_checkpoint(
-                checkpoint_dir, dataset_name, "test", labels_json_path
-            )
-            logger.info(f"Test data loaded in {time.time() - step_start:.1f}s")
-
-            # Train classifiers
+            # Train classifiers (probe is fit once on train; reused across eval splits)
             step_start = time.time()
             logger.info("Step 3/5: Training classifiers...")
             self.models = self.train_linear_classifiers(train_embeddings, train_labels)
             logger.info(f"Classifiers trained in {time.time() - step_start:.1f}s")
 
-            # Evaluate classifiers
-            step_start = time.time()
-            logger.info("Step 4/5: Evaluating classifiers...")
-            results = self.evaluate_classifiers(
-                test_embeddings, test_labels, test_accessions, "auto", pool_op
-            )
-            logger.info(f"Evaluation completed in {time.time() - step_start:.1f}s")
+            # Evaluate on each requested split. Probe is shared across splits.
+            results = None
+            test_embeddings = test_labels = test_accessions = None
+            for split in eval_splits:
+                step_start = time.time()
+                logger.info("Step 2+4/5: Loading + evaluating split '%s'...", split)
+                test_embeddings, test_labels, test_accessions = self.load_embeddings_from_checkpoint(
+                    checkpoint_dir, dataset_name, split, labels_json_path
+                )
+                results = self.evaluate_classifiers(
+                    test_embeddings, test_labels, test_accessions, "auto", pool_op
+                )
+                split_out = (
+                    os.path.join(output_dir, split) if len(eval_splits) > 1 else output_dir
+                )
+                logger.info("Step 5/5: Saving results for split '%s' to %s", split, split_out)
+                self.save_results(results, split_out)
+                logger.info(
+                    "Split '%s' evaluated + saved in %.1fs", split, time.time() - step_start
+                )
 
             # Log evaluation metrics to WandB
             if self.use_wandb and wandb.run is not None and "summary_stats" in results:
@@ -1317,11 +1331,8 @@ class EmbeddingEvaluator:
                 wandb.log(wandb_metrics)
                 logger.info("Logged evaluation metrics to WandB")
 
-            # Save results
-            step_start = time.time()
-            logger.info("Step 5/5: Saving results...")
-            self.save_results(results, output_dir)
-            logger.info(f"Results saved in {time.time() - step_start:.1f}s")
+            # save_results is now called inside the eval-splits loop above so
+            # each split lands in its own directory when multiple are requested.
 
             total_time = time.time() - start_time
             logger.info(
