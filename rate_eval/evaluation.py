@@ -1179,6 +1179,26 @@ class EmbeddingEvaluator:
             "probabilities": all_probabilities,
         }
 
+    @staticmethod
+    def _extract_metrics(summary_stats: Dict[str, Any]) -> Dict[str, Any]:
+        """Project the verbose summary_stats onto the metrics typically
+        reported in medical-imaging benchmarks: averages computed over the
+        subset of findings with at least one positive sample in the eval set
+        (the 'drop_zeros' subset, where AUC is well-defined).
+
+        Returns flat-keyed dict suitable for one-line tabular reads.
+        """
+        return {
+            "auc":              summary_stats.get("drop_zeros_common_auc"),
+            "f1":               summary_stats.get("drop_zeros_common_f1"),
+            "accuracy":         summary_stats.get("drop_zeros_common_accuracy"),
+            "precision":        summary_stats.get("drop_zeros_common_precision"),
+            "recall":           summary_stats.get("drop_zeros_common_recall"),
+            "specificity":      summary_stats.get("drop_zeros_common_specificity"),
+            "n_findings":       summary_stats.get("drop_zeros_common_count"),
+            "n_findings_total": summary_stats.get("total_findings"),
+        }
+
     def save_results(self, results: Dict[str, Any], output_dir: str) -> None:
         """
         Save evaluation results to CSV and JSON files.
@@ -1208,6 +1228,13 @@ class EmbeddingEvaluator:
         with open(summary_json_path, "w") as f:
             json.dump(results["summary_stats"], f, indent=2)
         logger.info(f"Saved summary stats to {summary_json_path}")
+
+        # Save the reported-metrics projection alongside the verbose summary.
+        metrics = self._extract_metrics(results.get("summary_stats", {}))
+        metrics_json_path = output_path / "metrics.json"
+        with open(metrics_json_path, "w") as f:
+            json.dump(metrics, f, indent=2)
+        logger.info(f"Saved metrics to {metrics_json_path}")
 
         # Save training stats if available
         if "training_stats" in results:
@@ -1280,6 +1307,15 @@ class EmbeddingEvaluator:
                 )
                 logger.info("Step 5/5: Saving results for split '%s' to %s", split, split_out)
                 self.save_results(results, split_out)
+                m = self._extract_metrics(results.get("summary_stats", {}))
+                logger.info(
+                    "%s: AUC=%.4f  F1=%.4f  n=%s/%s",
+                    split,
+                    (m.get("auc") or float("nan")),
+                    (m.get("f1") or float("nan")),
+                    m.get("n_findings"),
+                    m.get("n_findings_total"),
+                )
                 logger.info(
                     "Split '%s' evaluated + saved in %.1fs", split, time.time() - step_start
                 )
