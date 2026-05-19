@@ -1275,10 +1275,11 @@ class EmbeddingEvaluator:
 
         try:
             eval_splits = tuple(eval_splits) or ("test",)
+            single_split = len(eval_splits) == 1
 
             # Load training data
             step_start = time.time()
-            logger.info("Step 1/5: Loading training embeddings...")
+            logger.info("Loading training embeddings...")
             train_embeddings, train_labels, train_accessions = self.load_embeddings_from_checkpoint(
                 checkpoint_dir, dataset_name, "train", labels_json_path
             )
@@ -1286,89 +1287,82 @@ class EmbeddingEvaluator:
 
             # Train classifiers (probe is fit once on train; reused across eval splits)
             step_start = time.time()
-            logger.info("Step 3/5: Training classifiers...")
+            logger.info("Training classifiers on train split...")
             self.models = self.train_linear_classifiers(train_embeddings, train_labels)
             logger.info(f"Classifiers trained in {time.time() - step_start:.1f}s")
 
             # Evaluate on each requested split. Probe is shared across splits.
             results = None
-            test_embeddings = test_labels = test_accessions = None
             for split in eval_splits:
                 step_start = time.time()
-                logger.info("Step 2+4/5: Loading + evaluating split '%s'...", split)
-                test_embeddings, test_labels, test_accessions = self.load_embeddings_from_checkpoint(
+                logger.info("Evaluating split '%s': loading embeddings...", split)
+                eval_embeddings, eval_labels, eval_accessions = self.load_embeddings_from_checkpoint(
                     checkpoint_dir, dataset_name, split, labels_json_path
                 )
                 results = self.evaluate_classifiers(
-                    test_embeddings, test_labels, test_accessions, "auto", pool_op
+                    eval_embeddings, eval_labels, eval_accessions, "auto", pool_op
                 )
-                split_out = (
-                    os.path.join(output_dir, split) if len(eval_splits) > 1 else output_dir
-                )
-                logger.info("Step 5/5: Saving results for split '%s' to %s", split, split_out)
+                split_out = output_dir if single_split else os.path.join(output_dir, split)
+                logger.info("Evaluating split '%s': saving results to %s", split, split_out)
                 self.save_results(results, split_out)
-                m = self._extract_metrics(results.get("summary_stats", {}))
+                m = self._extract_metrics(results.get("summary_stats") or {})
+                auc = m.get("auc") if m.get("auc") is not None else float("nan")
+                f1 = m.get("f1") if m.get("f1") is not None else float("nan")
                 logger.info(
                     "%s: AUC=%.4f  F1=%.4f  n=%s/%s",
-                    split,
-                    (m.get("auc") or float("nan")),
-                    (m.get("f1") or float("nan")),
-                    m.get("n_findings"),
-                    m.get("n_findings_total"),
+                    split, auc, f1, m.get("n_findings"), m.get("n_findings_total"),
                 )
+
+                # Per-split WandB logging. Single-split callers (default
+                # eval_splits=("test",)) keep the old flat-key dashboard:
+                # `evaluation/avg_auc` etc. Multi-split runs namespace each
+                # split under `evaluation/<split>/...` and tag the eval-set
+                # size under `data/<split>/num_samples` so dashboards stay
+                # unambiguous.
+                if self.use_wandb and wandb.run is not None and "summary_stats" in results:
+                    summary = results["summary_stats"]
+                    if single_split:
+                        ev_prefix = "evaluation"
+                        n_samples_key = "data/num_test_samples"
+                    else:
+                        ev_prefix = f"evaluation/{split}"
+                        n_samples_key = f"data/{split}/num_samples"
+                    wandb_metrics = {
+                        f"{ev_prefix}/avg_accuracy":       summary.get("avg_accuracy", 0),
+                        f"{ev_prefix}/avg_precision":      summary.get("avg_precision", 0),
+                        f"{ev_prefix}/avg_recall":         summary.get("avg_recall", 0),
+                        f"{ev_prefix}/avg_f1":             summary.get("avg_f1", 0),
+                        f"{ev_prefix}/avg_auc":            summary.get("avg_auc", 0),
+                        f"{ev_prefix}/avg_specificity":    summary.get("avg_specificity", 0),
+                        f"{ev_prefix}/total_findings":     summary.get("total_findings", 0),
+                        f"{ev_prefix}/evaluated_findings": summary.get("evaluated_findings", 0),
+                        n_samples_key:                     len(eval_accessions),
+                        "data/num_train_samples":          len(train_accessions),
+                        "data/embedding_dim": (
+                            train_embeddings.shape[1] if len(train_embeddings.shape) > 1 else 0
+                        ),
+                    }
+                    # Threshold-specific keys: thresholdname_group_metric -> evaluation/<split>/threshold/group/metric
+                    known_thresholds = ["full", "drop_zeros"]
+                    for key, value in summary.items():
+                        for threshold_name in known_thresholds:
+                            prefix = f"{threshold_name}_"
+                            if not key.startswith(prefix):
+                                continue
+                            remaining = key[len(prefix):]
+                            if remaining.startswith("common_"):
+                                group, metric_name = "common", remaining[len("common_"):]
+                            elif remaining.startswith("rare_"):
+                                group, metric_name = "rare", remaining[len("rare_"):]
+                            else:
+                                continue
+                            wandb_metrics[f"{ev_prefix}/{threshold_name}/{group}/{metric_name}"] = value
+                    wandb.log(wandb_metrics)
+                    logger.info("Logged '%s' evaluation metrics to WandB", split)
+
                 logger.info(
                     "Split '%s' evaluated + saved in %.1fs", split, time.time() - step_start
                 )
-
-            # Log evaluation metrics to WandB
-            if self.use_wandb and wandb.run is not None and "summary_stats" in results:
-                summary = results["summary_stats"]
-
-                # Log summary metrics
-                wandb_metrics = {
-                    "evaluation/avg_accuracy": summary.get("avg_accuracy", 0),
-                    "evaluation/avg_precision": summary.get("avg_precision", 0),
-                    "evaluation/avg_recall": summary.get("avg_recall", 0),
-                    "evaluation/avg_f1": summary.get("avg_f1", 0),
-                    "evaluation/avg_auc": summary.get("avg_auc", 0),
-                    "evaluation/avg_specificity": summary.get("avg_specificity", 0),
-                    "evaluation/total_findings": summary.get("total_findings", 0),
-                    "evaluation/evaluated_findings": summary.get("evaluated_findings", 0),
-                    "data/num_train_samples": len(train_accessions),
-                    "data/num_test_samples": len(test_accessions),
-                    "data/embedding_dim": (
-                        train_embeddings.shape[1] if len(train_embeddings.shape) > 1 else 0
-                    ),
-                }
-
-                # Log split metrics for each threshold configuration
-                # Known threshold names from our fixed configuration
-                known_thresholds = ["full", "drop_zeros"]
-
-                for key, value in summary.items():
-                    # Check for threshold-specific metrics (format: thresholdname_group_metricname)
-                    for threshold_name in known_thresholds:
-                        prefix = f"{threshold_name}_"
-                        if key.startswith(prefix):
-                            # Extract group (common/rare) and metric name
-                            remaining = key[len(prefix) :]
-                            if remaining.startswith("common_"):
-                                group = "common"
-                                metric_name = remaining[7:]  # len("common_")
-                            elif remaining.startswith("rare_"):
-                                group = "rare"
-                                metric_name = remaining[5:]  # len("rare_")
-                            else:
-                                continue
-
-                            wandb_key = f"evaluation/{threshold_name}/{group}/{metric_name}"
-                            wandb_metrics[wandb_key] = value
-
-                wandb.log(wandb_metrics)
-                logger.info("Logged evaluation metrics to WandB")
-
-            # save_results is now called inside the eval-splits loop above so
-            # each split lands in its own directory when multiple are requested.
 
             total_time = time.time() - start_time
             logger.info(
